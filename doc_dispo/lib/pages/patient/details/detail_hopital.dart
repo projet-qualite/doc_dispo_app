@@ -1,5 +1,7 @@
 import 'package:doc_dispo/classes/hopital.dart';
 import 'package:doc_dispo/classes/specialite.dart';
+import 'package:doc_dispo/common/colors.dart';
+import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/common/widgets.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
 import 'package:doc_dispo/pages/patient/details/detail_medecin.dart';
@@ -35,7 +37,7 @@ class DetailHopitalState extends State<DetailHopital>
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(title: Text(widget.hopital!.libelle),),
+      appBar: AppBar(title: Text(widget.hopital!.libelle!),),
       body: Container(
         margin: EdgeInsets.only(bottom: 10),
         child: SingleChildScrollView(
@@ -52,30 +54,30 @@ class DetailHopitalState extends State<DetailHopital>
                             width: size.width/2.5,
                             height: size.width/3.8,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(50),
-                              border: Border.all(color: Colors.black),
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(color: Colors.black12),
                             ),
                             child: Padding(
                                 padding: const EdgeInsets.all(10),
-                                child: Image.network("http://54.38.186.80/front/img/hopitaux/"+widget.hopital!.img)
+                                child: Image.network(urlSite+"/front/img/hopitaux/"+widget.hopital!.img!)
                             )
                         ),
                         Column(
                           children: [
                             Text(widget.listMedecin!.length.toString(), style: const TextStyle(fontWeight: FontWeight.w400, fontFamily: "Roboto", fontSize: 18)),
-                            const Text("Medecins", style: TextStyle(fontWeight: FontWeight.w800, fontFamily: "Roboto", fontSize: 15),)
+                            Text( (widget.listMedecin!.length > 1 ) ? "Medecins" : "Medecin", style: TextStyle(fontWeight: FontWeight.w800, fontFamily: "Roboto", fontSize: 15),)
                           ],
                         ),
                         Column(
                           children: [
                             Text(widget.listSpecialite!.length.toString(), style: const TextStyle(fontWeight: FontWeight.w400, fontFamily: "Roboto", fontSize: 18)),
-                            const Text("Spécialités", style: TextStyle(fontWeight: FontWeight.w800, fontFamily: "Roboto", fontSize: 15),)
+                            Text( (widget.listSpecialite!.length > 1) ? "Spécialités" : "Spécialité", style: TextStyle(fontWeight: FontWeight.w800, fontFamily: "Roboto", fontSize: 15),)
                           ],
                         )
                       ],
                     )
                 ),
-                const SizedBox(height: 30,),
+                const SizedBox(height: 20,),
 
 
                 const Padding(
@@ -83,12 +85,13 @@ class DetailHopitalState extends State<DetailHopital>
                   child: Text(
                     "Medecins",
                     style: TextStyle(
-                        color: Colors.black,
+                        color: Colors.black54,
                         fontWeight: FontWeight.w700,
-                        fontSize: 25),
+                        fontSize: 18),
                   ),),
-                const SizedBox(height: 20,),
+                const SizedBox(height: 10,),
 
+                (widget.listMedecin!.length > 0) ?
                 SizedBox(
                   height: size.height / 4,
                   child: ListView.builder(
@@ -106,22 +109,33 @@ class DetailHopitalState extends State<DetailHopital>
                               MaterialPageRoute(builder: (context) => DetailMedecin(medecin: widget.listMedecin![index])),
                             );
                           },
-                          child: cardElementMedecin(title: title, subtitle: listSpe, size: size, image: "http://54.38.186.80/front/img/medecins/"+widget.listMedecin![index]!.img_1),
+                          child: cardElementMedecin(title: title, subtitle: listSpe, size: size,
+                              image: (widget.listMedecin![index]!.img_1 != null) ?
+                              urlSite+"/front/img/medecins/"+widget.listMedecin![index]!.img_1 :  urlSite+"/front/img/default.jpg"),
                         );
                       }),
-                ),
+                ) : const Padding(
+                  padding: EdgeInsets.only(left: 20),
+                  child: Text(
+                    "Pas de medecins",
+                    style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w400,
+                        fontSize: 15),
+                  ),),
+                const SizedBox(height: 20,),
                 const Padding(
                   padding: EdgeInsets.only(left: 20),
                   child: Text(
                     "Spécialités",
                     style: TextStyle(
-                        color: Colors.black,
+                        color: Colors.black54,
                         fontWeight: FontWeight.w700,
-                        fontSize: 25),
+                        fontSize: 18),
                   ),
                 ),
 
-                const SizedBox(height: 20,),
+                const SizedBox(height: 10,),
 
                 SizedBox(
                   height: 35,
@@ -130,17 +144,9 @@ class DetailHopitalState extends State<DetailHopital>
                       itemCount: widget.listSpecialite!.length,
                       itemBuilder: (context, index) {
 
-                        return Container(
-                          margin: const EdgeInsets.only(left: 20, right: 2),
-                          padding: const EdgeInsets.all(10),
-                          height: 10,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: Colors.grey[400]
-                          ),
-                          child: Center(
-                            child: Text(widget.listSpecialite![index].libelle, style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
+                        return libelle(colorWidget,
+                            widget.listSpecialite![index].libelle,
+                            Colors.white
                         );
 
                       }),
@@ -153,12 +159,12 @@ class DetailHopitalState extends State<DetailHopital>
                   child: Text(
                     "Assurances",
                     style: TextStyle(
-                        color: Colors.black,
+                        color: Colors.black54,
                         fontWeight: FontWeight.w700,
-                        fontSize: 28),
+                        fontSize: 18),
                   ),
                 ),
-                const SizedBox(height: 20,),
+                const SizedBox(height: 10,),
 
 
                 SizedBox(
@@ -168,17 +174,9 @@ class DetailHopitalState extends State<DetailHopital>
                       itemCount: widget.listAssurance!.length,
                       itemBuilder: (context, index) {
 
-                        return Container(
-                          margin: const EdgeInsets.only(left: 20, right: 2),
-                          padding: const EdgeInsets.all(10),
-                          height: 10,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: Colors.grey[400]
-                          ),
-                          child: Center(
-                            child: Text(widget.listAssurance![index].libelle, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          ),
+                        return libelle(colorWidget,
+                            widget.listAssurance![index].libelle,
+                            Colors.white
                         );
 
                       }),

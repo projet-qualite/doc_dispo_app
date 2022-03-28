@@ -2,6 +2,7 @@ import 'package:doc_dispo/classes/creneau.dart';
 import 'package:doc_dispo/classes/proche.dart';
 import 'package:doc_dispo/common/colors.dart';
 import 'package:doc_dispo/common/data.dart';
+import 'package:doc_dispo/common/request.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
 import 'package:doc_dispo/pages/medecin/creneau/ajouter_creneau.dart';
 import 'package:doc_dispo/pages/patient/proche/ajouter_proche.dart';
@@ -15,12 +16,106 @@ class ListeCreneau extends StatefulWidget {
 
 class ListeCreneauState extends State<ListeCreneau> {
   List<Creneau> creneaux = [];
+  bool isLoading = false;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     creneaux = getCreneauOfMedecin(currentUser.id);
+  }
+
+
+  void suppression(Creneau creneau)
+  {
+    supprimerCreneau(creneau).then((value) => {
+      setState(() {
+        isLoading = false;
+      }),
+      if(value.statusCode == 400)
+        {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'Vous ne pouvez pas supprimer ce créneau.')),
+          )
+        }
+      else{
+        getCreneau().then((response) {
+          setState(() {
+            list_creneau = response;
+            creneaux = getCreneauOfMedecin(currentUser.id);
+          });
+        }),
+        ScaffoldMessenger.of(context)
+            .showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Créneau supprimé')),
+        )
+
+      }
+
+    });
+  }
+
+  void showDialogF(String titre, String soustitre, Creneau creneau)
+  {
+    (Theme.of(context).platform == TargetPlatform.iOS) ? showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title:  Text(titre),
+          content: Text(soustitre),
+          actions: [
+            CupertinoDialogAction(
+                child: const Text("Oui"),
+                onPressed: ()
+                {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    isLoading = true;
+                  });
+                  suppression(creneau);
+                }
+            ),
+            CupertinoDialogAction(
+              child: const Text("Non"),
+              onPressed: (){
+                Navigator.of(context).pop();
+              }
+              ,
+            )
+          ],
+        );
+      },
+    ) :
+    showDialog(context: context, builder: (context){
+      return AlertDialog(
+        title: Text(titre),
+        content: Text(soustitre),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              setState(() {
+                isLoading = true;
+              });
+              suppression(creneau);
+            },
+            child: const Text('Oui', style: TextStyle(color: Colors.black),),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Non', style: TextStyle(color: Colors.black),),
+          ),
+        ],
+      );
+    });
+
   }
 
   @override
@@ -37,118 +132,52 @@ class ListeCreneauState extends State<ListeCreneau> {
           ),
           elevation: 0.0,
         ),
-        body: Stack(
+        body: (!isLoading) ? Stack(
           children: [
             Container(
-              margin: EdgeInsets.only(bottom: 40),
               child: ListView.builder(
                   itemCount: creneaux.length,
                   itemBuilder: (BuildContext ctx, int index) {
                     Creneau creneau = creneaux[index];
                     return Container(
-                      padding: EdgeInsets.all(20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      padding: EdgeInsets.only(left: 10, right: 10),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              CircleAvatar(
-                                child: Text(
-                                  avatar(currentUser.nom, currentUser.prenom),
+                              Text(
+                                  dateRdv(creneau.jour, creneau.heure),
                                   style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white),
-                                ),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.black,
+                                      overflow: TextOverflow.ellipsis)),
+                              IconButton(
+                                  onPressed: () {
+                                    showDialogF("Supression", "Voulez-vous supprimer ce creneau ?", creneau);
+                                  }, icon: const Icon(
+                                  Icons.delete,
+                                color: Colors.red,
                               ),
-                              const SizedBox(
-                                height: 10,
-                              ),
-                              SizedBox(
-                                width: 120,
-                                child: Text(
-                                    dateRdv(creneau.jour, creneau.heure),
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.black,
-                                        overflow: TextOverflow.ellipsis)),
-                              ),
+                                  )
                             ],
                           ),
-                          Row(
-                            children: [
-
-                              TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      list_creneau.remove(creneau.id);
-                                      creneaux = getCreneauOfMedecin(currentUser.id);
-                                    });
-                                  },
-                                  child: const Text(
-                                    "SUPPRIMER",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.red,
-                                        fontSize: 12),
-                                  ))
-                            ],
-                          )
+                          const Divider(
+                            height: 20,
+                            color: Color.fromRGBO(120, 120, 120, .4),
+                            thickness: 1,
+                          ),
                         ],
-                      ),
+                      )
                     );
                   }),
             ),
-            const SizedBox(
-              height: 30,
-            ),
-            Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: EdgeInsets.all(10),
-                  color: Colors.white,
-                  child: InkWell(
-                    child: Container(
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: colorWidget),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(
-                            Icons.lock_clock_rounded,
-                            size: 20,
-                            color: Colors.white,
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          Text(
-                            "AJOUTER UN CRENEAU",
-                            style: TextStyle(
-                                fontFamily: "Roboto",
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white),
-                          )
-                        ],
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => AjouterCreneau()),
-                      );
-                    },
-                  ),
-                ))
           ],
+        ) : const Center(
+          child: CircularProgressIndicator(),
         ));
   }
 }

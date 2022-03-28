@@ -6,6 +6,7 @@ import 'package:doc_dispo/classes/proche.dart';
 import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/common/request.dart';
 import 'package:doc_dispo/common/validations_field.dart';
+import 'package:doc_dispo/common/widgets.dart';
 import 'package:doc_dispo/enums/type_field.dart';
 import 'package:doc_dispo/models/champ_formulaire.dart';
 import 'package:doc_dispo/pages/patient/proche/liste_proche.dart';
@@ -26,6 +27,8 @@ class ModifierTelephoneState extends State<ModifierTelephone> {
   TextEditingController controller_phone = TextEditingController();
 
   late final _formKey;
+
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -77,13 +80,17 @@ class ModifierTelephoneState extends State<ModifierTelephone> {
                               number: true,
                               hint: "Téléphone",
                               data: Icons.phone,
-                              typeField: TypeField.NORMAL,
+                              typeField: TypeField.TELEPHONE,
                               controller: controller_phone,
                               validation: (value) {
                                 if (value == null || value.isEmpty) {
                                   return "Vous devez entrer le numéro de téléphone";
                                 }
-                                return validField(value, TypeField.NORMAL);
+                                else if(value.length < 10)
+                                {
+                                  return "Le numéro doit contenir au moins 10 chiffres";
+                                }
+                                return validField(value, TypeField.TELEPHONE);
                               },
                               readOnly: false,
                               showDate: () {
@@ -96,15 +103,21 @@ class ModifierTelephoneState extends State<ModifierTelephone> {
                             InkWell(
                                 onTap: () {
                                   if (_formKey.currentState!.validate()) {
-
+                                    setState(() {
+                                      isLoading = true;
+                                    });
                                       if(currentUser is Patient)
                                         {
                                           updateTelephonePatient(controller_phone.text,currentUser).then((value) => {
+                                            setState(() {
+                                              isLoading = false;
+                                            }),
                                             if(value.statusCode == 200)
                                               {
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 const SnackBar(
-                                                    content: Text('Enregistrer')),
+                                                  duration: Duration(seconds: 1),
+                                                    content: Text('Enregistré')),
                                               ),
                                               setState(() {
                                                 currentUser = Patient.fromJson(json.decode(value.body));
@@ -129,11 +142,15 @@ class ModifierTelephoneState extends State<ModifierTelephone> {
                                         }
                                       else{
                                         updateTelephoneMedecin(controller_phone.text,currentUser).then((value) => {
+                                          setState(() {
+                                              isLoading = false;
+                                           }),
                                           if(value.statusCode == 200)
                                             {
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 const SnackBar(
-                                                    content: Text('Enregistrer')),
+                                                  duration: Duration(seconds: 1),
+                                                    content: Text('Enregistré')),
                                               ),
                                               setState(() {
                                                 currentUser = Medecin.fromJson(json.decode(value.body));
@@ -167,15 +184,7 @@ class ModifierTelephoneState extends State<ModifierTelephone> {
                                     color: const Color.fromRGBO(59, 139, 150, 1),
                                   ),
                                   padding: const EdgeInsets.all(10),
-                                  child: const Center(
-                                    child: Text(
-                                      "Modifier",
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
+                                  child: buttonRequest(isLoading, "Modifier")
                                 )),
                           ],
                         ),

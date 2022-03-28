@@ -83,6 +83,18 @@ String? validField(String value, TypeField typeField, {String? valueMdp=null})
       return null;
       break;
 
+    case TypeField.TELEPHONE:
+
+      try{
+        int number = int.parse(value);
+
+        return null;
+      }catch(e)
+      {
+        return "Numéro de telephone incorrecte";
+      }
+      break;
+
 
 
     default:

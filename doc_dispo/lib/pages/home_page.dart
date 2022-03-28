@@ -17,12 +17,11 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage> {
 
-  late List<Map<String, dynamic>> rdvs;
+  List<Map<String, dynamic>> rdvs = [];
   void requetes()
   {
     getHopital().then((response) {
       setState(() {
-        print(response);
         list_hopital = response;
       });
     });
@@ -62,7 +61,8 @@ class HomePageState extends State<HomePage> {
 
     getRdv().then((response) {
       setState(() {
-        list_rdv = response;
+        list_rdv_futur = response[0];
+        list_rdv_passe = response[1];
       });
     });
 
@@ -75,7 +75,12 @@ class HomePageState extends State<HomePage> {
     getCreneau().then((response) {
       setState(() {
         list_creneau = response;
-        print(list_creneau);
+      });
+    });
+
+    getAllCreneau().then((response) {
+      setState(() {
+        list_all_creneau = response;
       });
     });
   }
@@ -87,8 +92,15 @@ class HomePageState extends State<HomePage> {
     requetes();
     if(currentUser != null)
       {
-        rdvs = getRdvProche(currentUser.id);
+        if(currentUser is Patient)
+        {
+          rdvs = getRdvProche(currentUser.id);
+        }
+        else{
+          rdvs = getRdvMedecins(currentUser.id);
+        }
       }
+
 
   }
 
@@ -102,44 +114,31 @@ class HomePageState extends State<HomePage> {
       body: Column(
           children: [
             Container(
-              height: (currentUser != null) ? size.height/2.5 : size.height/5,
+              padding: const EdgeInsets.only(bottom: 20),
               width: size.width,
               decoration: BoxDecoration(
                   color: colorWidget,
-                  borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(40),
-                      bottomRight: Radius.circular(40))),
+              ),
               child: Column(
                 children: [
-                  Padding(
-                      padding: const EdgeInsets.only(top: 25, right: 30),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            "images/logo.png",
-                            height: size.height / 8,
-                          ),
 
-                        ],
-                      )),
-                  (currentUser is Patient) ? Column(children: [Padding(
-                    padding: const EdgeInsets.only(left: 30, right: 30),
+                  (rdvs.isNotEmpty) ? Column(children: [Container(
+                    margin: const EdgeInsets.only(top: 30, bottom: 10),
+                    padding: const EdgeInsets.only(top: 20,left: 30, right: 30),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
                         Text(
-                          "Vos rendez vous",
+                          "Mes rendez vous",
                           style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
-                              fontSize: 25),
+                              fontSize: 20),
                         ),
                       ],
                     ),
                   ), Container(
-                      height: size.height / 6,
+                      height: size.height / 6.5,
                       child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: rdvs.length,
@@ -147,10 +146,21 @@ class HomePageState extends State<HomePage> {
                             var rdv = rdvs[index];
                             return RdvTemplate(
                                 key: ValueKey(rdv["creneau"].id),
-                                medecin: rdv["medecin"],
+                                concerne: (currentUser is Patient) ? rdv["medecin"] : rdv["proche"],
                                 creneau: rdv["creneau"],
-                                specialite: rdv["specialite"]);
-                          }))],) : Text("")
+                                subtext: (currentUser is Patient) ? rdv["specialite"].libelle : rdv["date_naissance"]
+                            );
+                          }))],) :
+                  Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                        margin: const EdgeInsets.only(top: 50, left: 10),
+                        child: Image.asset(
+                          "images/logo.png",
+                          height: size.height / 30,
+                        )
+                    ),
+                  )
                 ],
               ),
             ),
@@ -159,9 +169,9 @@ class HomePageState extends State<HomePage> {
             child: Column(
               children: [
                 Container(
-                  margin: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.only(top: 20, bottom: 10, left: 20, right: 20),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
@@ -169,7 +179,7 @@ class HomePageState extends State<HomePage> {
                         style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w700,
-                            fontSize: 28),
+                            fontSize: 23),
                       ),
                       InkWell(
                         onTap: (){
@@ -209,7 +219,7 @@ class HomePageState extends State<HomePage> {
                 ),
                 Container(
                   margin:
-                      const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+                      const EdgeInsets.only(bottom: 10, left: 20, right: 20, top: 10),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -219,13 +229,13 @@ class HomePageState extends State<HomePage> {
                         style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w700,
-                            fontSize: 28),
+                            fontSize: 23),
                       )
                     ],
                   ),
                 ),
                 SizedBox(
-                  height: size.height / 4,
+                  height: size.height / 3,
                   child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: list_assurance.length,

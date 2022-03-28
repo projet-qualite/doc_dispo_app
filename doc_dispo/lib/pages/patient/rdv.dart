@@ -1,17 +1,19 @@
 import 'package:doc_dispo/classes/creneau.dart';
 import 'package:doc_dispo/classes/medecin.dart';
+import 'package:doc_dispo/classes/patient.dart';
 import 'package:doc_dispo/classes/specialite.dart';
+import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class RdvTemplate extends StatelessWidget {
-  Medecin medecin;
+  dynamic concerne;
   Creneau creneau;
-  Specialite specialite;
+  String subtext;
 
   RdvTemplate(
-      {Key? key, required this.medecin, required this.creneau, required this.specialite}) : super(key: key);
+      {Key? key, required this.concerne, required this.creneau, required this.subtext}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +31,14 @@ class RdvTemplate extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircleAvatar(
-                backgroundImage: //(medecin.img_1 == null) ?
-                    AssetImage('images/avatar.png'),
-                //: AssetImage('images/'+medecin.img_1!),
-                radius: 25,
-              ),
+               Container(
+                 margin: EdgeInsets.all(10),
+                 child: CircleAvatar(
+                   backgroundImage: (concerne is Medecin) ? NetworkImage(urlSite+"/front/img/medecins/${concerne.img_1}") :
+                   NetworkImage(urlSite+"/front/img/avatar.png"),
+                   radius: 20,
+                 ),
+               ),
               const SizedBox(
                 width: 10,
               ),
@@ -43,19 +47,26 @@ class RdvTemplate extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: 120.0,
-                    child: Text(
-                      medecin.type! +
+                    child: (concerne is Patient) ? Text(
+                      concerne.type! +
                           " " +
-                          medecin.nom! +
+                          concerne.nom! +
                           " " +
-                          medecin.prenom!,
+                          concerne.prenom!,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 17),
+                    ) : Text(
+                          concerne.nom! +
+                          " " +
+                          concerne.prenom!,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 17),
                     ),
                   ),
                   Text(
-                    specialite.libelle,
+                    subtext,
                     style: const TextStyle(
                         fontWeight: FontWeight.w300, fontSize: 11),
                   )
@@ -68,8 +79,8 @@ class RdvTemplate extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.event_note),
-                SizedBox(
+                const Icon(Icons.event_note),
+                const SizedBox(
                   width: 15,
                 ),
                 Text(dateRdv(creneau.jour, creneau.heure))

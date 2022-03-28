@@ -15,7 +15,7 @@ import 'package:doc_dispo/classes/specialites_hopital.dart';
 import 'package:http/http.dart' as http;
 
 
-var url = 'http://54.38.186.80/api/';
+var url = 'https://doc-et-moi.com/api/';
 
 Future<List<Affilier>> getAffilier() async {
 
@@ -48,7 +48,6 @@ Future<Map<int, Assurance>> getAssurance() async {
 
   if (response.statusCode == 200) {
     var bodyAssurance = json.decode(response.body);
-    print(bodyAssurance);
     Map<int, Assurance> listAssurance = {};
     int index = 1;
     bodyAssurance.forEach((assurance) {
@@ -86,6 +85,29 @@ Future<Map<int, Creneau>> getCreneau() async {
 }
 
 
+Future<Map<int, Creneau>> getAllCreneau() async {
+
+  final response = await http.get(
+    Uri.parse(url+'creneaux'),
+    //headers: {"APP_KEY": header}
+  );
+
+  if (response.statusCode == 200) {
+    var bodyCreneau = json.decode(response.body);
+    Map<int, Creneau> listCreneau = {};
+    bodyCreneau.forEach((creneau) {
+      Creneau c = Creneau.fromJson(creneau);
+      listCreneau[c.id] = c;
+    });
+
+    return listCreneau;
+
+  } else {
+    throw Exception('Failed to load ');
+  }
+}
+
+
 
 Future<Map<int, Hopital>> getHopital() async {
 
@@ -98,6 +120,7 @@ Future<Map<int, Hopital>> getHopital() async {
     var bodyHopital = json.decode(response.body);
     Map<int, Hopital> listHopital = {};
     bodyHopital.forEach((hopital) {
+
       Hopital h = Hopital.fromJson(hopital);
       listHopital[h.id] = h;
     });
@@ -132,7 +155,7 @@ Future<Map<int, Medecin>> getMedecin() async {
 }
 
 
-Future<List<Motif>> getMotif() async {
+Future<Map<int, Motif>> getMotif() async {
 
   final response = await http.get(
     Uri.parse(url+'motif'),
@@ -141,9 +164,10 @@ Future<List<Motif>> getMotif() async {
 
   if (response.statusCode == 200) {
     var bodyMotif = json.decode(response.body);
-    List<Motif> listMotif = [];
+    Map<int, Motif> listMotif = {};
     bodyMotif.forEach((motif) {
-      listMotif.add(Motif.fromJson(motif));
+      Motif m = Motif.fromJson(motif);
+      listMotif[m.id] = m;
     });
 
     return listMotif;
@@ -154,18 +178,19 @@ Future<List<Motif>> getMotif() async {
 }
 
 
-Future<List<MotifConsultation>> getMotifConsultation() async {
+Future<Map<int, MotifConsultation>> getMotifConsultation() async {
 
   final response = await http.get(
-    Uri.parse(url+'/motif_consultation'),
+    Uri.parse(url+'motif_consultation'),
     //headers: {"APP_KEY": header}
   );
 
   if (response.statusCode == 200) {
     var bodyMotifConsultation = json.decode(response.body);
-    List<MotifConsultation> listMotifConsultation = [];
+    Map<int, MotifConsultation> listMotifConsultation = {};
     bodyMotifConsultation.forEach((motifConsultation) {
-      listMotifConsultation.add(MotifConsultation.fromJson(motifConsultation));
+      MotifConsultation m = MotifConsultation.fromJson(motifConsultation);
+      listMotifConsultation[m.id] = m;
     });
 
     return listMotifConsultation;
@@ -221,24 +246,33 @@ Future<Map<int, Proche>> getProche() async {
 }
 
 
-Future<Map<int, Rdv>> getRdv() async {
+Future<List<Map<int, Rdv>>> getRdv() async {
 
   final response = await http.get(
     Uri.parse(url+'rdv'),
     //headers: {"APP_KEY": header}
   );
-
   if (response.statusCode == 200) {
     var bodyRdv = json.decode(response.body);
-    Map<int, Rdv> listRdv = {};
-    bodyRdv.forEach((rdv) {
+    Map<int, Rdv> listRdvProchains = {};
+    Map<int, Rdv> listRdvPasses = {};
+
+    var prochains = bodyRdv[0];
+    var passes = bodyRdv[1];
+    prochains.forEach((rdv) {
       Rdv r = Rdv.fromJson(rdv);
-      listRdv[r.id] = r;
+      listRdvProchains[r.id] = r;
     });
 
-    return listRdv;
+    passes.forEach((rdv) {
+      Rdv r = Rdv.fromJson(rdv);
+      listRdvPasses[r.id] = r;
+    });
+
+    return [listRdvProchains, listRdvPasses];
 
   } else {
+
     throw Exception('Failed to load ');
   }
 }
@@ -321,6 +355,20 @@ Future creerCreneau(Creneau creneau) async {
   return response;
 }
 
+
+Future<Creneau?> getOneCreneau(int id) async {
+  final response = await http.get(
+    Uri.parse(url+"creneau/${id}"),
+  );
+  if(response.statusCode == 200)
+    {
+      return Creneau.fromJson(json.decode(response.body));
+    }
+  else{
+    return null;
+  }
+}
+
 Future supprimerCreneau(Creneau creneau) async {
 
   final response = await http.delete(
@@ -331,6 +379,8 @@ Future supprimerCreneau(Creneau creneau) async {
 }
 
 Future supprimerRdv(Rdv rdv) async {
+
+
 
   final response = await http.delete(
     Uri.parse(url+"rdv/${rdv.id}"),
@@ -360,7 +410,7 @@ Future creerRdv(Rdv rdv) async {
 Future creerProche(Proche proche) async {
 
   final response = await http.post(
-    Uri.parse(url+"proche?nom=${proche.nom}&prenom=${proche.prenom}&telephone=${proche.telephone}&date_naissance=${proche.date_naissance}&sexe=${proche.sexe}&id_patient=${proche.id_patient}"),
+    Uri.parse(url+"proche?nom=${proche.nom}&prenom=${proche.prenom}&telephone=${proche.telephone}&date_naissance=${proche.date_naissance}&sexe=${proche.sexe}&owner=${proche.owner}&id_patient=${proche.id_patient}"),
   );
 
   return response;
@@ -369,7 +419,7 @@ Future creerProche(Proche proche) async {
 Future updateProche(Proche proche) async {
 
   final response = await http.put(
-    Uri.parse(url+"proche/${proche.id}?nom=${proche.nom}&prenom=${proche.prenom}&telephone=${proche.telephone}&date_naissance=${proche.date_naissance}&sexe=${proche.sexe}&id_patient=${proche.id_patient}"),
+    Uri.parse(url+"proche/${proche.id}?nom=${proche.nom}&prenom=${proche.prenom}&telephone=${proche.telephone}&date_naissance=${proche.date_naissance}&sexe=${proche.sexe}&owner=${proche.owner}&id_patient=${proche.id_patient}"),
   );
 
   return response;

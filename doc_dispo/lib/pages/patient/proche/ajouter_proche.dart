@@ -2,9 +2,11 @@ import 'package:doc_dispo/classes/proche.dart';
 import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/common/request.dart';
 import 'package:doc_dispo/common/validations_field.dart';
+import 'package:doc_dispo/common/widgets.dart';
 import 'package:doc_dispo/enums/type_field.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
 import 'package:doc_dispo/models/champ_formulaire.dart';
+import 'package:doc_dispo/models/drop_down.dart';
 import 'package:doc_dispo/pages/patient/proche/liste_proche.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +29,8 @@ class AjouterProcheState extends State<AjouterProche> {
 
   String val = "";
   late final _formKey;
+  String? default_value;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -79,7 +83,7 @@ class AjouterProcheState extends State<AjouterProche> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           "Civilité",
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
@@ -88,7 +92,7 @@ class AjouterProcheState extends State<AjouterProche> {
                           children: [
                             Row(
                               children: [
-                                Text("Masculin"),
+                                const Text("Masculin"),
                                 Radio<String>(
                                   value: "m",
                                   groupValue: val,
@@ -102,7 +106,7 @@ class AjouterProcheState extends State<AjouterProche> {
                             ),
                             Row(
                               children: [
-                                Text("Feminin"),
+                                const Text("Feminin"),
                                 Radio<String>(
                                   value: "f",
                                   groupValue: val,
@@ -156,7 +160,6 @@ class AjouterProcheState extends State<AjouterProche> {
                         ),
                         InkWell(
                           onTap: () {
-                            print("FFFFFFF");
                           },
                           child: FormulaireField(
                             isPassword: false,
@@ -188,17 +191,42 @@ class AjouterProcheState extends State<AjouterProche> {
                           number: true,
                           hint: "Téléphone",
                           data: Icons.phone,
-                          typeField: TypeField.NORMAL,
+                          typeField: TypeField.TELEPHONE,
                           controller: controller_phone,
                           validation: (value) {
                             if (value == null || value.isEmpty) {
                               return "Vous devez entrer le numéro de téléphone";
                             }
-                            return validField(value, TypeField.NORMAL);
+                            else if(value.length < 10)
+                              {
+                                return "Le numéro doit contenir au moins 10 chiffres";
+                              }
+                            return validField(value, TypeField.TELEPHONE);
                           },
                           readOnly: false,
                           showDate: () {},
                         ),
+                        const SizedBox(
+                          height: 15,
+                        ),
+                        (definedOwner(currentUser.id) == false) ? DropDownField(
+                          hintText: "C'est bien vous ?",
+                          defaultValue: default_value,
+                          personne: ["Oui", "Non"],
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              default_value = newValue!;
+                            });
+                          },
+                          validator: (value) {
+                            if (value != "Oui" &&
+                                value != "Non") {
+                              return "Vous devez sélectionner une option";
+                            }
+                            return null;
+                          },
+
+                        ) : Text(''),
                         const SizedBox(
                           height: 30,
                         ),
@@ -206,7 +234,16 @@ class AjouterProcheState extends State<AjouterProche> {
                             onTap: () {
                               if (_formKey.currentState!.validate()) {
                                 if (val != "") {
+                                  setState(() {
+                                    isLoading = true;
+                                  });
                                   int id = list_proche.length + 1;
+
+                                  int owner = 0;
+                                  if(default_value == "Oui")
+                                  {
+                                    owner = 1;
+                                  }
 
                                   Proche proche = Proche(
                                       id: id,
@@ -215,17 +252,25 @@ class AjouterProcheState extends State<AjouterProche> {
                                       prenom: controller_prenom.text,
                                       telephone: controller_phone.text,
                                       sexe: val,
+                                      owner: owner,
                                       date_naissance:
                                           formatDate(controller_date.text),
                                       id_patient: currentUser.id);
                                   creerProche(proche).then((value) => {
+                                        setState((){
+                                          isLoading = false;
+                                        }),
                                         if (value.statusCode == 201)
                                           {
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(
                                               const SnackBar(
-                                                  content: Text('Enregistrer')),
+                                                  duration: Duration(seconds: 1),
+                                                  content: Text('Enregistré')),
                                             ),
+                                            setState((){
+                                              selectedIndex = 3;
+                                            }),
                                             Navigator.pushAndRemoveUntil(
                                               context,
                                               MaterialPageRoute(
@@ -238,7 +283,6 @@ class AjouterProcheState extends State<AjouterProche> {
                                           }
                                         else
                                           {
-                                            print(value.statusCode),
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(
                                               const SnackBar(
@@ -262,15 +306,7 @@ class AjouterProcheState extends State<AjouterProche> {
                                 color: const Color.fromRGBO(59, 139, 150, 1),
                               ),
                               padding: const EdgeInsets.all(15),
-                              child: const Center(
-                                child: Text(
-                                  "Ajouter",
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                              child:  buttonRequest(isLoading, "Ajouter")
                             )),
                       ],
                     ),

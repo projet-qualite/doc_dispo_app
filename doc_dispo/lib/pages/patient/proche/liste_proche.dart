@@ -16,6 +16,7 @@ class ListeProche extends StatefulWidget {
 
 class ListeProcheState extends State<ListeProche> {
   List<Proche> proches = [];
+  bool isLoad = true;
 
   @override
   void initState() {
@@ -25,7 +26,113 @@ class ListeProcheState extends State<ListeProche> {
       setState(() {
         list_proche = response;
         proches = getProcheOfPatient(currentUser.id);
+        isLoad = false;
       });
+    });
+
+  }
+
+  void showDialogF(String titre, String soustitre, Proche proche)
+  {
+    (Theme.of(context).platform == TargetPlatform.iOS) ? showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title:  Text(titre),
+          content: Text(soustitre),
+          actions: [
+            CupertinoDialogAction(
+                child: const Text("Oui"),
+                onPressed: ()
+                {
+                  supprimerProche(proche).then((value) => {
+                    if(value.statusCode == 204)
+                    {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          duration: Duration(seconds: 1),
+                            content: Text('Suppression éffectuée')),
+                      ),
+                      getProche().then((response) {
+                        setState(() {
+                          list_proche = response;
+                          proches = getProcheOfPatient(currentUser.id);
+                        });
+                      }),
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (BuildContext context) =>
+                                  Navigation(),
+                        ),
+                            (route) => false,
+                      )
+                    }
+                    else{
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Une erreur s\'est produite')),),
+                    }
+
+                  });
+                }
+            ),
+            CupertinoDialogAction(
+              child: const Text("Non"),
+              onPressed: (){
+                Navigator.of(context).pop();
+              }
+              ,
+            )
+          ],
+        );
+      },
+    ) :
+    showDialog(context: context, builder: (context){
+      return AlertDialog(
+        title: Text(titre),
+        content: Text(soustitre),
+        actions: [
+          TextButton(
+            onPressed: () {
+              supprimerProche(proche).then((value) => {
+                if(value.statusCode == 204)
+                  {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Suppression éffectuée')),
+                    ),
+                    getProche().then((response) {
+                      setState(() {
+                        list_proche = response;
+                        proches = getProcheOfPatient(currentUser.id);
+                      });
+                    }),
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (BuildContext context) =>
+                            Navigation(),
+                      ),
+                          (route) => false,
+                    )
+                  }
+                else{
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Une erreur s\'est produite')),),
+                }
+
+              });
+            },
+            child: const Text('Oui', style: TextStyle(color: Colors.black),),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Non', style: TextStyle(color: Colors.black),),
+          ),
+        ],
+      );
     });
 
   }
@@ -44,7 +151,8 @@ class ListeProcheState extends State<ListeProche> {
           ),
           elevation: 0.0,
         ),
-        body: Stack(
+        body: (!isLoad) ?
+        Stack(
           children: [
             Container(
               margin: EdgeInsets.only(bottom: 40),
@@ -64,13 +172,13 @@ class ListeProcheState extends State<ListeProche> {
                               CircleAvatar(
                                 child: Text(
                                   avatar(proche.nom, proche.prenom),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.w900,
                                       color: Colors.white),
                                 ),
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 height: 10,
                               ),
                               SizedBox(
@@ -86,7 +194,7 @@ class ListeProcheState extends State<ListeProche> {
                                         color: Colors.black,
                                         overflow: TextOverflow.ellipsis)),
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 height: 15,
                               ),
                               Text(dateNaissance(proche.date_naissance),
@@ -117,60 +225,28 @@ class ListeProcheState extends State<ListeProche> {
                                     );
                                   },
                                   child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.edit,
-                                        color: colorWidget,
-                                      ),
-                                      const Text(
+                                    children: const [
+                                      Text(
                                         "MODIFIER",
                                         style: TextStyle(
                                             fontWeight: FontWeight.w700,
-                                            fontSize: 12),
+                                            fontSize: 10),
                                       )
                                     ],
                                   )),
                               TextButton(
                                   onPressed: () {
-                                    supprimerProche(proche).then((value) => {
-                                      if(value.statusCode == 204)
-                                        {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                                content: Text('Suppression éffectuée')),
-                                          ),
-                                          getProche().then((response) {
-                                            setState(() {
-                                              list_proche = response;
-                                              proches = getProcheOfPatient(currentUser.id);
-                                            });
-                                          }),
-                                          Navigator.pushAndRemoveUntil(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (BuildContext context) =>
-                                                  Navigation(),
-                                            ),
-                                                (route) => false,
-                                          )
-                                        }
-                                      else{
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                              content: Text('Une erreur s\'est produite')),
-                                        ),
-                                      }
-
-                                    });
-
+                                    showDialogF("Suppression",
+                                        "Voulez-vous supprimer ce proche ? ( Supression impossible dans le cas où le proche ait déjà eu des rendez-vous )",
+                                        proche
+                                    );
                                   },
                                   child: const Text(
                                     "SUPPRIMER",
                                     style: TextStyle(
                                         fontWeight: FontWeight.w700,
                                         color: Colors.red,
-                                        fontSize: 12),
+                                        fontSize: 10),
                                   ))
                             ],
                           )
@@ -187,8 +263,7 @@ class ListeProcheState extends State<ListeProche> {
                 left: 0,
                 right: 0,
                 child: Container(
-                  padding: EdgeInsets.all(10),
-                  color: Colors.white,
+                  padding: EdgeInsets.all(20),
                   child: InkWell(
                     child: Container(
                       padding: EdgeInsets.all(10),
@@ -226,6 +301,12 @@ class ListeProcheState extends State<ListeProche> {
                   ),
                 ))
           ],
-        ));
+        ) :
+
+          Center(
+            child: new CircularProgressIndicator(),
+          ),
+
+    );
   }
 }

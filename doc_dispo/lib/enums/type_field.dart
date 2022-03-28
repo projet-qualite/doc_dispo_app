@@ -4,5 +4,6 @@ enum TypeField{
   PWD,
   C_PWD,
   NORMAL,
-  SELECT
+  SELECT,
+  TELEPHONE
 }

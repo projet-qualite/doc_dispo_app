@@ -6,6 +6,7 @@ import 'package:doc_dispo/classes/proche.dart';
 import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/common/request.dart';
 import 'package:doc_dispo/common/validations_field.dart';
+import 'package:doc_dispo/common/widgets.dart';
 import 'package:doc_dispo/enums/type_field.dart';
 import 'package:doc_dispo/models/champ_formulaire.dart';
 import 'package:doc_dispo/pages/patient/proche/liste_proche.dart';
@@ -25,6 +26,7 @@ class ModifierEmailState extends State<ModifierEmail> {
   TextEditingController controller_mail = TextEditingController();
 
   late final _formKey;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -94,15 +96,19 @@ class ModifierEmailState extends State<ModifierEmail> {
                                 onTap: () {
                                   if (_formKey.currentState!.validate()) {
 
+                                    setState(() {
+                                      isLoading = true;
+                                    });
+
                                     if(currentUser is Patient)
                                     {
                                       updateEmailPatient(controller_mail.text,currentUser).then((value) => {
+                                        setState(() {
+                                          isLoading = false;
+                                        }),
                                         if(value.statusCode == 200)
                                           {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                  content: Text('Enregistrer')),
-                                            ),
+                                            snackbar("Enregistré",context),
                                             setState(() {
                                               currentUser = Patient.fromJson(json.decode(value.body));
                                             }),
@@ -126,11 +132,14 @@ class ModifierEmailState extends State<ModifierEmail> {
                                     }
                                     else{
                                       updateEmailMedecin(controller_mail.text,currentUser).then((value) => {
+                                        setState(() {
+                                          isLoading = false;
+                                        }),
                                         if(value.statusCode == 200)
                                           {
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               const SnackBar(
-                                                  content: Text('Enregistrer')),
+                                                  content: Text('Enregistré')),
                                             ),
                                             setState(() {
                                               currentUser = Medecin.fromJson(json.decode(value.body));
@@ -161,15 +170,7 @@ class ModifierEmailState extends State<ModifierEmail> {
                                     color: const Color.fromRGBO(59, 139, 150, 1),
                                   ),
                                   padding: const EdgeInsets.all(10),
-                                  child: const Center(
-                                    child: Text(
-                                      "Modifier",
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
+                                  child: buttonRequest(isLoading, "Modifier")
                                 )),
                           ],
                         ),

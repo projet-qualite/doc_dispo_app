@@ -1,6 +1,8 @@
+import 'package:doc_dispo/classes/medecin.dart';
 import 'package:doc_dispo/classes/patient.dart';
 import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/common/request.dart';
+import 'package:doc_dispo/common/widgets.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
 import 'package:doc_dispo/pages/medecin/creneau/list_creneau.dart';
 import 'package:doc_dispo/pages/patient/identite/modifier_email.dart';
@@ -9,6 +11,7 @@ import 'package:doc_dispo/pages/patient/identite/modifier_telephone.dart';
 import 'package:doc_dispo/pages/patient/proche/liste_proche.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'login.dart';
 
@@ -17,81 +20,15 @@ class Profile extends StatefulWidget {
 }
 
 class ProfileState extends State<Profile> {
-  void requetes()
-  {
-    getHopital().then((response) {
-      setState(() {
-        print(response);
-        list_hopital = response;
-      });
-    });
 
-    getAssurance().then((response) {
-      setState(() {
-        list_assurance = response;
-      });
-    });
-
-
-    getAffilier().then((response) {
-      setState(() {
-        list_affilier = response;
-      });
-    });
-
-    getSpecialite().then((response) {
-      setState(() {
-        list_specialite = response;
-      });
-    });
-
-    getMedecin().then((response) {
-      setState(() {
-        list_medecin = response;
-      });
-    });
-
-
-    getSpecialiteHopital().then((response) {
-      setState(() {
-        list_specialites_hopital = response;
-      });
-    });
-
-
-    getRdv().then((response) {
-      setState(() {
-        list_rdv = response;
-      });
-    });
-
-    getProche().then((response) {
-      setState(() {
-        list_proche = response;
-      });
-    });
-
-    getCreneau().then((response) {
-      setState(() {
-        list_creneau = response;
-        print(list_creneau);
-      });
-    });
-  }
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    requetes();
-
-
   }
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
-
-
     return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -104,23 +41,55 @@ class ProfileState extends State<Profile> {
         body: (currentUser != null) ?
         Column(
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(left: 20, top: 20),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  "Identité",
-                  style: TextStyle(
-                      fontFamily: "Roboto",
-                      fontWeight: FontWeight.w900,
-                      fontSize: 17,
-                      color: Color.fromRGBO(150, 150, 150, 1)),
-                ),
-              ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Align(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        "Mon Identité",
+                        style: TextStyle(
+                            fontFamily: "Roboto",
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black),
+                      ),
+                    ),
+                    (currentUser is Medecin) ?  Container(
+                      margin: EdgeInsets.only(top: 20),
+                      child: Column(
+                        children: [
+
+                          identite("Civilité: ",
+                              ( currentUser.sexe != null) ?
+                                ( currentUser.sexe == "m") ? "Monsieur" : "Madame"
+                              : null),
+                          identite("Nom: ", currentUser.nom),
+                          identite("Prénom(s): ", currentUser.prenom),
+                          identite("Date de naissance: ", currentUser.date_naissance,),
+                        ],
+                      ),
+                    ) :
+                    (getOwner(currentUser.id) != false ) ? Container(
+                      margin: EdgeInsets.only(top: 10),
+                      child: Column(
+                        children: [
+                          identite("Civilité: ", ( getOwner(currentUser.id).sexe == "m") ? "Monsieur" : "Madame"),
+                          identite("Nom: ", getOwner(currentUser.id).nom),
+                          identite("Prénom(s): ", getOwner(currentUser.id).prenom),
+                          identite("Date de naissance: ", getOwner(currentUser.id).date_naissance,),
+                        ],
+                      ),
+                    ) : Text('')
+
+                  ],
+                )
             ),
             const Divider(
               height: 20,
-              color: Color.fromRGBO(120, 120, 120, 1),
+              color: Color.fromRGBO(120, 120, 120, .4),
               thickness: 1,
             ),
             Column(
@@ -134,7 +103,7 @@ class ProfileState extends State<Profile> {
                          Icon(
                           (currentUser is Patient) ? Icons.people : Icons.lock_clock,
                           size: 25,
-                          color: const Color.fromRGBO(59, 139, 150, 1),
+                           color: Color.fromRGBO(59, 139, 150, 1),
                         ),
                         const SizedBox(
                           width: 30,
@@ -153,7 +122,7 @@ class ProfileState extends State<Profile> {
                               height: 2,
                             ),
                             Text(
-                              (currentUser is Patient) ? "Ajouter et gérer vos proches" : "Ajouter et gérer vos créneaux",
+                              (currentUser is Patient) ? "Ajouter et gérer vos proches" : "Gérer vos créneaux",
                               style: const TextStyle(
                                   color: Color.fromRGBO(109, 109, 109, 1),
                                   fontSize: 13,
@@ -191,7 +160,7 @@ class ProfileState extends State<Profile> {
                 ),
                 const Divider(
                   height: 20,
-                  color: Color.fromRGBO(120, 120, 120, 1),
+                  color: Color.fromRGBO(120, 120, 120, .4),
                   thickness: 1,
                 ),
                 InkWell(
@@ -251,7 +220,7 @@ class ProfileState extends State<Profile> {
                 ),
                 const Divider(
                   height: 20,
-                  color: Color.fromRGBO(120, 120, 120, 1),
+                  color: Color.fromRGBO(120, 120, 120, .4),
                   thickness: 1,
                 ),
                 InkWell(
@@ -310,7 +279,7 @@ class ProfileState extends State<Profile> {
                 ),
                 const Divider(
                   height: 20,
-                  color: Color.fromRGBO(120, 120, 120, 1),
+                  color: Color.fromRGBO(120, 120, 120, .4),
                   thickness: 1,
                 ),
                 InkWell(
@@ -323,42 +292,28 @@ class ProfileState extends State<Profile> {
                   child: Padding(
                     padding: const EdgeInsets.only(left: 20, right: 20),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.people,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: const [
+                        Icon(
+                          Icons.lock,
                           size: 25,
+                          color: Color.fromRGBO(59, 139, 150, 1),
                         ),
-                        const SizedBox(
+                        SizedBox(
                           width: 30,
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              "Mot de passe",
-                              style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800),
-                            ),
-                            Text(
-                              hidePassword(currentUser.mdp),
-                              style: const TextStyle(
-                                  color: Color.fromRGBO(109, 109, 109, 1),
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w900),
-                            ),
-                          ],
+                        Text(
+                          "Mot de passe",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800),
                         ),
-                        const Spacer(),
-                        const Padding(
-                          padding: EdgeInsets.only(top: 10),
-                          child: Icon(
-                            Icons.arrow_forward_ios,
-                            size: 15,
-                          ),
-                        )
+                        Spacer(),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 15,
+                        ),
                       ],
                     ),
                   ),
@@ -367,7 +322,7 @@ class ProfileState extends State<Profile> {
             ),
             const Divider(
               height: 20,
-              color: Color.fromRGBO(120, 120, 120, 1),
+              color: Color.fromRGBO(120, 120, 120, .4),
               thickness: 1,
             ),
             const SizedBox(
@@ -376,10 +331,13 @@ class ProfileState extends State<Profile> {
             Column(
               children: [
                 InkWell(
-                  onTap: (){
+                  onTap: () async {
+                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                    prefs.setInt('currentUser', 0);
                     setState(() {
                       currentUser = null;
                       selectedIndex = 0;
+
                     });
                     Navigator.of(context)
                         .pushNamedAndRemoveUntil("/navigation", (Route<dynamic> route) => false);
@@ -422,7 +380,7 @@ class ProfileState extends State<Profile> {
                 ),
                 const Divider(
                   height: 20,
-                  color: Color.fromRGBO(120, 120, 120, 1),
+                  color: Color.fromRGBO(120, 120, 120, .4),
                   thickness: 1,
                 ),
 

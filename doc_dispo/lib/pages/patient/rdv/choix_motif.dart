@@ -1,6 +1,7 @@
 import 'package:doc_dispo/classes/medecin.dart';
 import 'package:doc_dispo/classes/motif.dart';
 import 'package:doc_dispo/common/colors.dart';
+import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
 import 'package:doc_dispo/pages/patient/rdv/choix_date.dart';
 import 'package:flutter/material.dart';
@@ -39,7 +40,10 @@ class ChoixMotifState extends State<ChoixMotif> {
               CircleAvatar(
                 radius: 20,
                 backgroundImage:
-                    NetworkImage("http://54.38.186.80/front/img/medecins/" + widget.medecin!.img_1!),
+                    NetworkImage(
+                        ( widget.medecin!.img_1 != null ) ?
+                        urlSite+"/front/img/medecins/" + widget.medecin!.img_1! : urlSite+"/front/img/default.jpg"
+                       ),
               ),
               const SizedBox(
                 width: 20,
@@ -96,7 +100,7 @@ class ChoixMotifState extends State<ChoixMotif> {
                       return InkWell(
                         child: Container(
                           padding: EdgeInsets.all(10),
-                          child: Text(motif!["motif"].libelle),
+                          child: Text(motif["motif"].libelle),
                         ),
                         onTap: (){
                           Navigator.push(

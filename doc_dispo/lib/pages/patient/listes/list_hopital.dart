@@ -4,6 +4,7 @@ import 'package:doc_dispo/classes/medecin.dart';
 import 'package:doc_dispo/classes/specialite.dart';
 import 'package:doc_dispo/common/colors.dart';
 import 'package:doc_dispo/common/data.dart';
+import 'package:doc_dispo/common/widgets.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -46,43 +47,17 @@ class ListHopitalState extends State<ListHopital> {
         ),
         body: Column(
           children: [
+            const SizedBox(height: 25,),
             Padding(
-              padding: const EdgeInsets.all(30),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        "Trouver",
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 25),
-                      ),
-                      Text(
-                        "Un Hôpital",
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 25),
-                      ),
-                    ],
-                  ),
-
-                ],
-              ),
-            ),
-            Padding(
-                padding: const EdgeInsets.only(left: 30, right: 30),
-                child: TextField(
+                padding: const EdgeInsets.only(left: 20, right: 20),
+                child: (Theme.of(context).platform == TargetPlatform.android) ? TextField(
                   controller: controller,
                   decoration: InputDecoration(
+                      contentPadding: EdgeInsets.symmetric(vertical: 5),
                       hintText: "Rechercher",
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15))),
+                          borderRadius: BorderRadius.circular(5))),
                   onChanged: (text) {
                     setState(() {
                       if (text == "") {
@@ -106,9 +81,35 @@ class ListHopitalState extends State<ListHopital> {
                       }
                     });
                   },
-                )),
+                ) : CupertinoSearchTextField(
+                    controller: controller,
+                    onChanged: (text) {
+                      setState(() {
+                        if (text == "") {
+                          if (assurances.isEmpty) {
+                            hopitaux =
+                                list_hopital.entries.map((e) => e.value).toList();
+                          } else {
+                            hopitaux = list_hopital.entries
+                                .map((e) => e.value)
+                                .toList()
+                                .where((element) => getHopitalOfAssurance(
+                                list: assurances, id: element.id))
+                                .toList();
+                          }
+                        } else {
+                          hopitaux = hopitaux
+                              .where((element) => element.libelle!
+                              .toLowerCase()
+                              .contains(text.toLowerCase()))
+                              .toList();
+                        }
+                      });
+                    }
+                )
+            ),
             const SizedBox(
-              height: 15,
+              height: 30,
             ),
             SizedBox(
               height: 35,
@@ -117,27 +118,16 @@ class ListHopitalState extends State<ListHopital> {
                   itemCount: list_assurance.length,
                   itemBuilder: (context, index) {
                     return InkWell(
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 2, left: 30),
-                        padding: const EdgeInsets.all(10),
-                        height: 20,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: list_assurance[index + 1]!.selected!
-                                ? colorWidget
-                                : Colors.grey[400]),
-                        child: Center(
-                          child: Text(list_assurance[index + 1]!.libelle,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: list_assurance[index + 1]!.selected!
-                                      ? Colors.white
-                                      : Colors.black)),
-                        ),
+                      child: libelle(list_assurance[index + 1]!.selected!
+                          ? colorWidget
+                          : Colors.grey[200]!,
+                          list_assurance[index + 1]!.libelle,
+                          list_assurance[index + 1]!.selected!
+                              ? Colors.white
+                              : Colors.black
                       ),
                       onTap: () {
                         setState(() {
-                          //print(list_assurance[index + 1]!.selected);
                           list_assurance[index + 1]!.selected =
                               !list_assurance[index + 1]!.selected!;
 
@@ -164,11 +154,11 @@ class ListHopitalState extends State<ListHopital> {
                   }),
             ),
             const SizedBox(
-              height: 15,
+              height: 30,
             ),
             Expanded(
               child: GridView.count(
-                  mainAxisSpacing: 20,
+                  mainAxisSpacing: 1,
                   crossAxisCount: 2,
                   children: hopitaux.map((e) {
                     Map<String, List<dynamic>> listM =

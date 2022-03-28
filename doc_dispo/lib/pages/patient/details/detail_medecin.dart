@@ -4,6 +4,7 @@ import 'package:doc_dispo/classes/medecin.dart';
 import 'package:doc_dispo/classes/patient.dart';
 import 'package:doc_dispo/common/colors.dart';
 import 'package:doc_dispo/common/data.dart';
+import 'package:doc_dispo/common/request.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
 import 'package:doc_dispo/pages/patient/rdv/choix_motif.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +32,13 @@ class DetailMedecinState extends State<DetailMedecin> {
     super.initState();
 
     specialite = getSpecialiteMedecin(id: widget.medecin!.id)!.libelle;
-    hopital = list_hopital[widget.medecin!.id_hopital]!.libelle;
+    hopital = list_hopital[widget.medecin!.id_hopital]!.libelle!;
+
+    getMotifConsultation().then((response) => {
+      setState(() {
+        motifs_consultation = response;
+      })
+    });
 
     list_creneau.forEach((key, value) => {
           if (value != null && value.id_medecin == widget.medecin!.id!)
@@ -70,7 +77,8 @@ class DetailMedecinState extends State<DetailMedecin> {
                 width: size.width,
                 color: Colors.green,
                 child: Image.network(
-                  "http://54.38.186.80/front/img/medecins/" + widget.medecin!.img_1!,
+                  ( widget.medecin!.img_1 != null ) ?
+                  urlSite+"/front/img/medecins/" + widget.medecin!.img_1! : urlSite+"/front/img/default.jpg",
                   fit: BoxFit.cover,
                 ),
               ),
@@ -99,7 +107,7 @@ class DetailMedecinState extends State<DetailMedecin> {
                                   " " +
                                   widget.medecin!.prenom!,
                               style: const TextStyle(
-                                  fontSize: 25, fontWeight: FontWeight.w700),
+                                  fontSize: 18, fontWeight: FontWeight.w700),
                             ),
                             const SizedBox(
                               height: 5,
@@ -107,7 +115,7 @@ class DetailMedecinState extends State<DetailMedecin> {
                             Text(
                               hopital,
                               style: const TextStyle(
-                                  fontSize: 18,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w400,
                                   color: Colors.black),
                             ),
@@ -117,7 +125,7 @@ class DetailMedecinState extends State<DetailMedecin> {
                             Text(
                               specialite,
                               style: const TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w300,
                                   color: Colors.black),
                             ),
@@ -127,7 +135,7 @@ class DetailMedecinState extends State<DetailMedecin> {
                             Text(
                               widget.medecin!.biographie!,
                               style: const TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w300,
                                   color: Colors.black),
                               textAlign: TextAlign.justify,
@@ -146,7 +154,7 @@ class DetailMedecinState extends State<DetailMedecin> {
                 right: 0,
                 child: (currentUser is Patient) ? InkWell(
                   child: Container(
-                    height: 40,
+                    height: (Theme.of(context).platform == TargetPlatform.iOS) ? 80 : 40,
                     width: 40,
                     decoration: BoxDecoration(
                         color: colorWidget,

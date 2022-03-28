@@ -1,6 +1,9 @@
 import 'package:doc_dispo/classes/creneau.dart';
 import 'package:doc_dispo/classes/medecin.dart';
+import 'package:doc_dispo/classes/patient.dart';
+import 'package:doc_dispo/classes/proche.dart';
 import 'package:doc_dispo/classes/specialite.dart';
+import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,25 +11,30 @@ import 'package:flutter/material.dart';
 class RdvTemplate2 extends StatefulWidget {
   dynamic concerne;
   Creneau creneau;
-  Specialite specialite;
+  String subtext;
 
   RdvTemplate2(
-      {Key? key, required this.concerne, required this.creneau, required this.specialite}) : super(key: key);
+      {Key? key,
+      required this.concerne,
+      required this.creneau,
+      required this.subtext})
+      : super(key: key);
+
   RdvTemplate2State createState() => RdvTemplate2State();
 }
 
-class RdvTemplate2State extends State<RdvTemplate2>
-{
+class RdvTemplate2State extends State<RdvTemplate2> {
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
 
     return Container(
-        width: size.width / 1.3,
+      width: size.width / 1.3,
       padding: EdgeInsets.all(5),
       margin: const EdgeInsets.only(left: 50, right: 50, top: 15),
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(20)),
+          color: Colors.white, borderRadius: BorderRadius.circular(5)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -34,33 +42,43 @@ class RdvTemplate2State extends State<RdvTemplate2>
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const CircleAvatar(
-                backgroundImage: //(medecin.img_1 == null) ?
-                    AssetImage('images/avatar.png'),
-                //: AssetImage('images/'+medecin.img_1!),
-                radius: 25,
+              CircleAvatar(
+                backgroundImage: (currentUser is Medecin) ?
+                NetworkImage(urlSite+"/front/img/avatar.png") :
+                NetworkImage(urlSite+"/front/img/medecins/"+widget.concerne.img_1!),
+                radius: 20,
               ),
               const SizedBox(
-                width: 10,
+                width: 20,
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
                     width: 120.0,
-                    child: Text(
-                      widget.concerne.type! +
-                          " " +
-                          widget.concerne.nom! +
-                          " " +
-                          widget.concerne.prenom!,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 17),
-                    ),
+                    child: (currentUser is Medecin)
+                        ? Text(
+                            widget.concerne.nom + " " + widget.concerne.prenom,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 17),
+                          )
+                        : Text(
+                            widget.concerne.type! +
+                                " " +
+                                widget.concerne.nom +
+                                " " +
+                                widget.concerne.prenom,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 17),
+                          ),
+                  ),
+                  const SizedBox(
+                    height: 3,
                   ),
                   Text(
-                    widget.specialite.libelle,
+                    widget.subtext,
                     style: const TextStyle(
                         fontWeight: FontWeight.w300, fontSize: 11),
                   )
@@ -68,8 +86,8 @@ class RdvTemplate2State extends State<RdvTemplate2>
               ),
             ],
           ),
-          Padding(
-            padding: EdgeInsets.all(5),
+          Container(
+            padding: const EdgeInsets.only(top: 20, bottom: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

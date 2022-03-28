@@ -2,24 +2,130 @@ import 'package:doc_dispo/classes/medecin.dart';
 import 'package:doc_dispo/classes/patient.dart';
 import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/common/request.dart';
+import 'package:doc_dispo/common/widgets.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
-import 'package:doc_dispo/pages/patient/identite/modifier_email.dart';
-import 'package:doc_dispo/pages/patient/identite/modifier_mdp.dart';
-import 'package:doc_dispo/pages/patient/identite/modifier_telephone.dart';
-import 'package:doc_dispo/pages/patient/proche/liste_proche.dart';
 import 'package:doc_dispo/pages/patient/rdv2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'navigation.dart';
 
 class Rdv extends StatefulWidget {
   RdvState createState() => RdvState();
 }
 
 class RdvState extends State<Rdv> {
-  List<Map<String, dynamic>> rdvs = [];
-  List<Map<String, dynamic>> rdvspasses = [];
+  late List<Map<String, dynamic>> rdvs;
+  late List<Map<String, dynamic>> rdvspasses = [];
+
+  bool isLoad = true;
+
+
+  void showDialogF(String titre, String soustitre, dynamic rdv)
+  {
+    (Theme.of(context).platform == TargetPlatform.iOS) ? showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title:  Text(titre),
+          content: Text(soustitre),
+          actions: [
+            CupertinoDialogAction(
+                child: const Text("Oui"),
+                onPressed: ()
+                {
+                  supprimerRdv(rdv)
+                      .then((value) =>
+                  {
+                    if(value.statusCode == 204)
+                      {
+                        snackbar('Rendez-vous annulé', context),
+                        getRdv().then((response) {
+                          setState(() {
+                            list_rdv_futur = response[0];
+                            list_rdv_passe = response[1];
+                            rdvs = getRdvProche(currentUser.id);
+                            rdvspasses = getRdvPasseProche(currentUser.id);
+                          });
+                        }),
+                      }
+                    else
+                      {
+                        if(value.statusCode == 403)
+                          {
+                            snackbar('Vous ne pouvez pas annuler ce rdv', context)
+                          }
+                        else
+                          {
+                            snackbar('Une erreur s\'est produite', context)
+                          }
+                      },
+                  Navigator.of(context).pop()
+                  });
+                }
+            ),
+            CupertinoDialogAction(
+              child: const Text("Non"),
+              onPressed: (){
+                Navigator.of(context).pop();
+              }
+              ,
+            )
+          ],
+        );
+      },
+    ) :
+
+    showDialog(context: context, builder: (context){
+          return AlertDialog(
+            title: Text(titre),
+            content: Text(soustitre),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  supprimerRdv(rdv)
+                      .then((value) =>
+                  {
+                    if(value.statusCode == 204)
+                      {
+                        snackbar('Rendez-vous annulé', context),
+                        getRdv().then((response) {
+                          setState(() {
+                            list_rdv_futur = response[0];
+                            list_rdv_passe = response[1];
+                            rdvs = getRdvProche(currentUser.id);
+                            rdvspasses = getRdvPasseProche(currentUser.id);
+                          });
+                        }),
+                      }
+                    else
+                      {
+                        if(value.statusCode ==
+                            403)
+                          {
+                            snackbar('Vous ne pouvez pas annuler ce rdv', context),
+                          }
+                        else
+                          {
+                            snackbar('Une erreur s\'est produite', context),
+                          }
+                      },
+                    Navigator.of(context).pop()
+                  });
+                },
+                child: const Text('Oui', style: TextStyle(color: Colors.black),),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Non', style: TextStyle(color: Colors.black),),
+              ),
+            ],
+          );
+    });
+
+  }
+
 
 
   @override
@@ -28,7 +134,8 @@ class RdvState extends State<Rdv> {
     super.initState();
     getRdv().then((response) {
       setState(() {
-        list_rdv = response;
+        list_rdv_futur = response[0];
+        list_rdv_passe = response[1];
         if(currentUser is Medecin )
         {
           rdvs = getRdvMedecins(currentUser.id);
@@ -38,8 +145,11 @@ class RdvState extends State<Rdv> {
           rdvs = getRdvProche(currentUser.id);
           rdvspasses = getRdvPasseProche(currentUser.id);
         }
+
+        isLoad = false;
       });
     });
+
 
 
 
@@ -51,7 +161,7 @@ class RdvState extends State<Rdv> {
     return DefaultTabController(
         length: 2,
         child: Scaffold(
-            backgroundColor: Color.fromRGBO(210, 233, 236, 1),
+            backgroundColor: const Color.fromRGBO(210, 233, 236, 1),
             appBar: AppBar(
               title: const Text(
                 "Mes Rendez-vous",
@@ -69,17 +179,17 @@ class RdvState extends State<Rdv> {
                       margin: const EdgeInsets.only(top: 20),
                       padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
+                          borderRadius: BorderRadius.circular(5),
                           color: Colors.white),
-                      width: size.width / 1.3,
+                      width: size.width / 1.2,
                       height: 50,
                       child: TabBar(
                         unselectedLabelColor: Colors.grey,
                         indicatorSize: TabBarIndicatorSize.label,
                         indicatorColor: const Color.fromRGBO(59, 139, 150, 1),
                         indicator: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15.0),
-                          color: Colors.grey,
+                          borderRadius: BorderRadius.circular(5.0),
+                          color: Colors.grey[400],
                         ),
                         tabs: const [
                           Tab(
@@ -95,6 +205,13 @@ class RdvState extends State<Rdv> {
                         ],
                       ),
                     )),
+                (isLoad) ?
+                Center(
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 50),
+                      child: const CircularProgressIndicator(),
+                    )
+                ) :
                 Expanded(
                       child: TabBarView(
                         children: [
@@ -103,23 +220,30 @@ class RdvState extends State<Rdv> {
                               itemBuilder: (context, index) {
                                 var rdv = rdvs[index];
                                 return Container(
-                                  width: size.width / 1.3,
-                                  padding: EdgeInsets.all(5),
-                                  margin: const EdgeInsets.only(left: 50, right: 50, top: 15),
+                                  width: size.width / 1.1,
+                                  padding: const EdgeInsets.all(5),
+                                  margin: const EdgeInsets.only(left: 40, right: 40, top: 15),
                                   decoration: BoxDecoration(
-                                      color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                                      color: Colors.white, borderRadius: BorderRadius.circular(5)),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      const SizedBox(
+                                        height: 15,
+                                      ),
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        //crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          const CircleAvatar(
-                                            backgroundImage: //(medecin.img_1 == null) ?
-                                            AssetImage('images/avatar.png'),
-                                            //: AssetImage('images/'+medecin.img_1!),
-                                            radius: 25,
+                                          Container(
+                                            margin: const EdgeInsets.only(right: 10),
+                                            child: CircleAvatar(
+                                              backgroundImage:
+                                              (currentUser is Patient) ?
+                                                (rdv["medecin"].img_1 != null) ? NetworkImage(urlSite+"/front/img/medecins/${rdv["medecin"].img_1}") :
+                                                  NetworkImage(urlSite+"/front/img/avatar.png")
+                                              : NetworkImage(urlSite+"/front/img/avatar.png"),
+                                              radius: 20,
+                                            ),
                                           ),
                                           const SizedBox(
                                             width: 10,
@@ -128,67 +252,56 @@ class RdvState extends State<Rdv> {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               SizedBox(
-                                                width: 120.0,
-                                                child: (currentUser is Patient) ?
-                                                Text(
-                                                  rdv["medecin"].type! +
-                                                      " " +
-                                                      rdv["medecin"].nom! +
-                                                      " " +
-                                                      rdv["medecin"].prenom!,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                      fontWeight: FontWeight.w700, fontSize: 17),
-                                                ) : Text(
-                                                      rdv["proche"].nom! +
-                                                      " " +
-                                                      rdv["proche"].prenom!,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                      fontWeight: FontWeight.w700, fontSize: 17),
-                                                )
+                                                  width: 120.0,
+                                                  child: (currentUser is Patient) ?
+                                                  Text(
+                                                    rdv["medecin"].type! +
+                                                        " " +
+                                                        rdv["medecin"].nom! +
+                                                        " " +
+                                                        rdv["medecin"].prenom!,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                        fontWeight: FontWeight.w700, fontSize: 17),
+                                                  ) : Text(
+                                                    rdv["proche"].nom! +
+                                                        " " +
+                                                        rdv["proche"].prenom!,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                        fontWeight: FontWeight.w700, fontSize: 17),
+                                                  )
                                               ),
-                                              Text(
+                                              const SizedBox(
+                                                height: 3,
+                                              ),
+                                              (currentUser is Patient) ? Text(
                                                 rdv["specialite"].libelle,
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w300, fontSize: 11),
+                                              ) : Text(
+                                                rdv["date_naissance"],
                                                 style: const TextStyle(
                                                     fontWeight: FontWeight.w300, fontSize: 11),
                                               )
                                             ],
                                           ),
                                           (currentUser is Patient) ?
-                                          IconButton(onPressed: (){
-
-                                            supprimerRdv(rdv["rdv"]).then((value) => {
-                                              if(value.statusCode == 204)
-                                                {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(
-                                                        content: Text('Suppression éffectuée')),
-                                                  ),
-                                                  getRdv().then((response) {
-                                                    setState(() {
-                                                      list_rdv = response;
-                                                      rdvs = getRdvProche(currentUser.id);
-                                                      rdvspasses = getRdvPasseProche(currentUser.id);
-                                                    });
-                                                  }),
+                                          Container(
+                                            margin: const EdgeInsets.only(left: 30),
+                                            child: InkWell(
+                                                child: const Icon(Icons.delete, color: Colors.red,),
+                                                onTap: () {
+                                                  showDialogF("Confirmer l'annulation",
+                                                      "Voulez-vous annuler ce rdv ?",
+                                                      rdv["rdv"]);
                                                 }
-                                              else{
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                      content: Text('Une erreur s\'est produite')),
-                                                ),
-                                              }
-
-                                            });
-                                            setState(() {
-                                              rdvs.remove(rdv);
-                                            });
-                                          }, icon: Icon(Icons.delete, color: Colors.red,)) : const Text('')
+                                            ),
+                                          ): const Text('')
                                         ],
                                       ),
-                                      Padding(
-                                        padding: const EdgeInsets.all(5),
+                                      Container(
+                                        padding: const EdgeInsets.only(top: 20, bottom: 10),
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
@@ -201,16 +314,11 @@ class RdvState extends State<Rdv> {
                                         ),
                                       )
                                     ],
-                                  ),
+                                  )
                                 );
 
 
-                                  /*RdvTemplate2(
-                                      key: ValueKey(rdv["creneau"].id),
-                                      medecin: rdv["medecin"],
-                                      creneau: rdv["creneau"],
-                                      specialite: rdv["specialite"]
-                                );*/
+
                               }),
 
                           (currentUser is Patient) ?
@@ -222,7 +330,7 @@ class RdvState extends State<Rdv> {
                                     key: ValueKey(rdv["creneau"].id),
                                     concerne: rdv["medecin"],
                                     creneau: rdv["creneau"],
-                                    specialite: rdv["specialite"]
+                                    subtext: rdv["specialite"].libelle
                                 );
                               }) :
                           ListView.builder(
@@ -233,7 +341,7 @@ class RdvState extends State<Rdv> {
                                     key: ValueKey(rdv["creneau"].id),
                                     concerne: rdv["proche"],
                                     creneau: rdv["creneau"],
-                                    specialite: rdv["specialite"]
+                                    subtext: rdv["date_naissance"]!
                                 );
                               })
                         ],

@@ -3,6 +3,7 @@ import 'package:doc_dispo/classes/specialite.dart';
 import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'colors.dart';
 
@@ -17,11 +18,11 @@ Widget templateElementsAccueil({required String title, required String subtitle,
       children: [
         Container(
             width: size.width / 2.2,
-            height: size.height / 7,
+            height: size.height / 6,
             decoration: BoxDecoration(
-                border: Border.all(color: Colors.black),
+                border: Border.all(color: Colors.black38),
                 borderRadius:
-                BorderRadius.circular(20)),
+                BorderRadius.circular(5)),
             child: Padding(
               padding: const EdgeInsets.all(10),
               child: Image.network(
@@ -29,22 +30,25 @@ Widget templateElementsAccueil({required String title, required String subtitle,
                   width: size.width),
             )),
         Container(
-          padding: EdgeInsets.only(left: 10, top: 4),
+          width: size.width / 2.5,
+          padding: EdgeInsets.only(top: 4),
           child:  Text(
             title,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
                 color: Colors.black,
-                fontSize: 20,
+                fontSize: 14,
                 fontWeight: FontWeight.bold),
           ),
         ),
         Container(
-          padding: EdgeInsets.only(left: 10),
+          width: size.width / 3,
           child:  Text(
             subtitle,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
                 color: Colors.grey,
-                fontSize: 16,
+                fontSize: 12,
                 fontWeight: FontWeight.bold),
           ),
         ),
@@ -58,7 +62,7 @@ Widget templateElementsAccueil({required String title, required String subtitle,
 
 // Header on login, signin, reset pages
 Widget header({required double width, required String mainTitle, required String subtitle1,required String subtitle2,
-  required BuildContext context, required String route, bool back = false})
+  required BuildContext context, required String route, bool back = false, bool logo= true})
 {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,10 +75,10 @@ Widget header({required double width, required String mainTitle, required String
             Navigator.of(context).pop();
           },
           ) : Text(""),
-          Image.asset(
+          (logo) ? Image.asset(
             "images/logo.png",
             width: (back) ? width/2 : width/1.8,
-          ),
+          ) : Text(''),
         ],
       ),
 
@@ -100,10 +104,16 @@ Widget header({required double width, required String mainTitle, required String
             ),
           ),
           InkWell(
-            onTap: (){
-              selectedIndex = 2;
-              Navigator.of(context)
-                  .pushNamedAndRemoveUntil(route, (Route<dynamic> route) => false);
+            onTap: () async{
+
+              if (!await launch(
+                route,
+                forceSafariVC: false,
+                forceWebView: false,
+              )) {
+                throw 'Could not launch $route';
+              }
+
             },
             child: Text(
               subtitle2,
@@ -193,9 +203,9 @@ Widget cardElementMedecin({required String title, required Specialite? subtitle,
       children: [
         Container(
             width: size.width / 2.2,
-            height: size.height / 7,
+            height: size.height / 5.5,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(5),
               child: Image.network(image, fit: BoxFit.cover,),
             )
         ),
@@ -207,7 +217,7 @@ Widget cardElementMedecin({required String title, required Specialite? subtitle,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
                 color: Colors.black,
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.bold),
           ),
         ),
@@ -218,7 +228,7 @@ Widget cardElementMedecin({required String title, required Specialite? subtitle,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
                 color: Colors.grey,
-                fontSize: 14,
+                fontSize: 12,
                 fontWeight: FontWeight.bold),
           ),
         ),
@@ -242,5 +252,112 @@ Widget styleCreneau(Creneau creneau)
       )
 
 
+  );
+}
+
+
+Widget identite(String titre, String? valeur)
+{
+  return (valeur != null) ? Row(
+    children: [
+       Text(
+        titre,
+        style: const TextStyle(
+            fontFamily: "Roboto",
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: Color.fromRGBO(78, 78, 78 ,.8)),
+      ),
+      Text(
+        valeur,
+        style: const TextStyle(
+            fontFamily: "Roboto",
+            fontSize: 14,
+            color: Color.fromRGBO(78, 78, 78 ,.7)),
+      ),
+    ],
+  ) :  const Text('');
+}
+
+
+Widget recapitulatif(String titre, String? valeur)
+{
+  return (valeur != null) ? Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(
+        titre,
+        style: const TextStyle(
+            fontFamily: "Roboto",
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            color: Color.fromRGBO(78, 78, 78 ,.8)),
+      ),
+      Text(
+        valeur,
+        style: const TextStyle(
+            fontFamily: "Roboto",
+            fontSize: 11,
+            color: Color.fromRGBO(78, 78, 78 ,.7)),
+      ),
+    ],
+  ) :  const Text('');
+}
+
+
+Widget libelle(Color colorBox, String texte, Color colorTexte)
+{
+  return Container(
+    margin: const EdgeInsets.only(right: 2, left: 20),
+    padding: const EdgeInsets.all(7),
+    height: 25,
+    decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(5),
+        color: colorBox,
+    ),
+    child: Center(
+      child: Text(
+          texte,
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              color: colorTexte)
+      ),
+    ),
+  );
+}
+
+
+Widget buttonRequest(bool isLoading, String titre)
+{
+  return (isLoading) ?
+  Center(
+    child: Container(
+      height: 20,
+      width: 20,
+      child: const Center(
+        child: CircularProgressIndicator(
+          color: Colors.white,
+          strokeWidth: 3,
+        ),
+      ),
+    ),
+  ) :  Center(
+    child: Text(
+      titre,
+      style: const TextStyle(
+          color: Colors.white,
+          fontSize: 17,
+          fontWeight: FontWeight.bold),
+    ),
+  );
+}
+
+
+dynamic snackbar(String titre, BuildContext context)
+{
+  return ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+        content: Text(titre)),
   );
 }

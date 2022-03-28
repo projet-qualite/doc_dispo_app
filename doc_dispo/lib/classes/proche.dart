@@ -12,10 +12,12 @@ class Proche
   String date_naissance;
   String telephone;
   String sexe;
+  int owner;
   int id_patient;
 
   Proche({required this.id, required this.slug, required this.nom, required this.prenom,
     required this.telephone, required this.sexe,required this.date_naissance,
+    this.owner = 0,
     required this.id_patient});
 
 
@@ -27,6 +29,7 @@ class Proche
       telephone: json["telephone"],
       sexe: json["sexe"],
       date_naissance: json["date_naissance"],
+      owner: json["owner"],
       id_patient: json["id_patient"],
   );
 
@@ -39,6 +42,7 @@ class Proche
     "telephone": telephone,
     "sexe": sexe,
     "date_naissance": date_naissance,
+    "owner": owner,
     "id_patient": id_patient,
   };
 }

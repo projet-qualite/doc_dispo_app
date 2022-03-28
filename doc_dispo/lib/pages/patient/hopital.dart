@@ -1,4 +1,5 @@
 import 'package:doc_dispo/classes/hopital.dart';
+import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/common/widgets.dart';
 import 'package:doc_dispo/pages/patient/details/detail_hopital.dart';
 import 'package:flutter/cupertino.dart';
@@ -17,10 +18,10 @@ class HopitalTemplate extends StatelessWidget
 
     Size size = MediaQuery.of(context).size;
 
-    String image = "http://54.38.186.80/front/img/hopitaux/"+hopital!.img;
+    String image = urlSite+"front/img/hopitaux/"+hopital!.img!;
 
     return InkWell(
-      child: templateElementsAccueil(title: hopital!.libelle, subtitle: listMedecin!.length.toString()+" Medecins", image: image, size: size),
+      child: templateElementsAccueil(title: hopital!.libelle!, subtitle: (listMedecin!.length > 1) ? listMedecin!.length.toString()+" Medecins" : listMedecin!.length.toString()+" Medecin" , image: image, size: size),
       onTap: (){
         Navigator.push(
           context,

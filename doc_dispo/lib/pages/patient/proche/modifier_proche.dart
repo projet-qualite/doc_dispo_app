@@ -1,4 +1,6 @@
 
+import 'dart:async';
+
 import 'package:doc_dispo/classes/proche.dart';
 import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/common/request.dart';
@@ -6,6 +8,7 @@ import 'package:doc_dispo/common/validations_field.dart';
 import 'package:doc_dispo/enums/type_field.dart';
 import 'package:doc_dispo/main_elements/functions.dart';
 import 'package:doc_dispo/models/champ_formulaire.dart';
+import 'package:doc_dispo/models/drop_down.dart';
 import 'package:doc_dispo/pages/navigation.dart';
 import 'package:doc_dispo/pages/patient/proche/liste_proche.dart';
 import 'package:flutter/cupertino.dart';
@@ -30,6 +33,9 @@ class ModifierProcheState extends State<ModifierProche> {
 
   String val = "";
   late final _formKey;
+  String? default_value = null;
+
+  bool isLoad = false;
 
   @override
   void initState() {
@@ -40,8 +46,8 @@ class ModifierProcheState extends State<ModifierProche> {
     controller_prenom.text = widget.proche.prenom;
     controller_date.text = DateFormat('dd-MM-yyyy').format(DateTime.parse(widget.proche.date_naissance));
     controller_phone.text = widget.proche.telephone;
+    default_value = (widget.proche.owner == 0) ? "Non" : "Oui";
     val = widget.proche.sexe;
-
   }
 
   DateTime currentDate = DateTime.now();
@@ -62,6 +68,7 @@ class ModifierProcheState extends State<ModifierProche> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
+
 
     return Scaffold(
       backgroundColor: Color.fromRGBO(210, 233, 236, 1),
@@ -88,7 +95,7 @@ class ModifierProcheState extends State<ModifierProche> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           "Civilité",
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
@@ -165,7 +172,6 @@ class ModifierProcheState extends State<ModifierProche> {
                         ),
                         InkWell(
                           onTap: () {
-                            print("FFFFFFF");
                           },
                           child: FormulaireField(
                             isPassword: false,
@@ -194,13 +200,17 @@ class ModifierProcheState extends State<ModifierProche> {
                           number: true,
                           hint: "Téléphone",
                           data: Icons.phone,
-                          typeField: TypeField.NORMAL,
+                          typeField: TypeField.TELEPHONE,
                           controller: controller_phone,
                           validation: (value) {
                             if (value == null || value.isEmpty) {
                               return "Vous devez entrer le numéro de téléphone";
                             }
-                            return validField(value, TypeField.NORMAL);
+                            else if(value.length < 10)
+                            {
+                              return "Le numéro doit contenir au moins 10 chiffres";
+                            }
+                            return validField(value, TypeField.TELEPHONE);
                           },
                           readOnly: false,
                           showDate: () {
@@ -208,26 +218,64 @@ class ModifierProcheState extends State<ModifierProche> {
                           },
                         ),
                         const SizedBox(
+                          height: 15,
+                        ),
+                        DropDownField(
+                          hintText: "C'est bien vous ?",
+                          defaultValue: default_value,
+                          personne: const ["Oui", "Non"],
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              default_value = newValue!;
+                            });
+                          },
+                          validator: (value) {
+                            if (value != "Oui" &&
+                                value != "Non") {
+                              return "Vous devez sélectionner une option";
+                            }
+                            return null;
+                          },
+
+                        ),
+                        const SizedBox(
                           height: 30,
                         ),
                         InkWell(
                             onTap: () {
+
                               if (_formKey.currentState!.validate()) {
+                                setState(() {
+                                  isLoad = true;
+                                });
 
                                 if(val != "")
                                   {
-
+                                      int owner = 0;
+                                      if(default_value == "Oui")
+                                        {
+                                          owner = 1;
+                                        }
                                       Proche proche = Proche(
                                           id: widget.proche.id, slug: controller_nom.text, nom: controller_nom.text, prenom: controller_prenom.text,
-                                          telephone: controller_phone.text,sexe: val, date_naissance: formatDate(controller_date.text), id_patient: currentUser.id
+                                          telephone: controller_phone.text,sexe: val, owner: owner, date_naissance: formatDate(controller_date.text), id_patient: currentUser.id
                                       );
                                     updateProche(proche).then((value) => {
+                                      setState((){
+                                        isLoad = false;
+                                      }),
                                       if(value.statusCode == 200)
                                         {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             const SnackBar(
-                                                content: Text('Enregistrer')),
+                                              duration: Duration(seconds: 1),
+                                                content: Text('Modification éffectuée')),
                                           ),
+                                          getProche().then((response) {
+                                            setState(() {
+                                              list_proche = response;
+                                            });
+                                          }),
                                           Navigator.pushAndRemoveUntil(
                                             context,
                                             MaterialPageRoute(
@@ -241,11 +289,11 @@ class ModifierProcheState extends State<ModifierProche> {
                                       else{
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           const SnackBar(
+                                            duration: Duration(seconds: 1),
                                               content: Text('Une erreur s\'est produite')),
                                         ),
                                       }
                                     });
-
                                   }
                                 else{
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -253,8 +301,6 @@ class ModifierProcheState extends State<ModifierProche> {
                                         content: Text('Vous devez sélectionner le genre')),
                                   );
                                 }
-
-
                               }
                             },
                             child: Container(
@@ -263,7 +309,19 @@ class ModifierProcheState extends State<ModifierProche> {
                                 color: const Color.fromRGBO(59, 139, 150, 1),
                               ),
                               padding: const EdgeInsets.all(15),
-                              child: const Center(
+                              child: (isLoad) ?
+                              Center(
+                                child: Container(
+                                  height: 20,
+                                  width: 20,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 3,
+                                    ),
+                                  ),
+                                ),
+                              ) : const Center(
                                 child: Text(
                                   "Modifier",
                                   style: TextStyle(

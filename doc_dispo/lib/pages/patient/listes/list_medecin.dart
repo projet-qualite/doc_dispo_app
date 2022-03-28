@@ -20,65 +20,23 @@ class ListMedecinState extends State<ListMedecin> {
   List<Medecin> medecins = [];
   List<Specialite> specialites = [];
   late TextEditingController controller;
+  bool specialiteLoading = true;
+  bool medecinLoading = true;
 
   void requetes()
   {
-    getHopital().then((response) {
-      setState(() {
-        print(response);
-        list_hopital = response;
-      });
-    });
-
-    getAssurance().then((response) {
-      setState(() {
-        list_assurance = response;
-      });
-    });
-
-
-    getAffilier().then((response) {
-      setState(() {
-        list_affilier = response;
-      });
-    });
 
     getSpecialite().then((response) {
       setState(() {
         list_specialite = response;
+        bool specialiteLoading = false;
       });
     });
 
     getMedecin().then((response) {
       setState(() {
         list_medecin = response;
-      });
-    });
-
-
-    getSpecialiteHopital().then((response) {
-      setState(() {
-        list_specialites_hopital = response;
-      });
-    });
-
-
-    getRdv().then((response) {
-      setState(() {
-        list_rdv = response;
-      });
-    });
-
-    getProche().then((response) {
-      setState(() {
-        list_proche = response;
-      });
-    });
-
-    getCreneau().then((response) {
-      setState(() {
-        list_creneau = response;
-        print(list_creneau);
+        medecinLoading = false;
       });
     });
   }
@@ -99,48 +57,28 @@ class ListMedecinState extends State<ListMedecin> {
 
     return Scaffold(
         backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text(
+            "Trouver un medecin",
+            style: TextStyle(fontFamily: "Roboto", fontWeight: FontWeight.w800),
+          ),
+          elevation: 0.0,
+        ),
         body: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(30),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        "Trouver",
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 25),
-                      ),
-                      Text(
-                        "Un medecin",
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 25),
-                      ),
-                    ],
-                  ),
-                  CircleAvatar(
-                    radius: 30,
-                    child: Image.asset("images/avatar.png"),
-                  )
-                ],
-              ),
-            ),
-            Padding(
-                padding: const EdgeInsets.only(left: 30, right: 30),
-                child: TextField(
+
+            Container(
+                margin: const EdgeInsets.only(top: 20),
+                padding: const EdgeInsets.only(left: 20, right: 20),
+                child: (Theme.of(context).platform == TargetPlatform.android) ?
+                TextField(
                   controller: controller,
                   decoration: InputDecoration(
+                      contentPadding: EdgeInsets.symmetric(vertical: 5),
                       hintText: "Rechercher",
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15))),
+                          borderRadius: BorderRadius.circular(5))),
                   onChanged: (text) {
                     setState(() {
                       if (text == "") {
@@ -152,23 +90,53 @@ class ListMedecinState extends State<ListMedecin> {
                               .map((e) => e.value)
                               .toList()
                               .where((element) => getMedecinOfSpecialite(
-                                  list: specialites, id: element.id))
+                              list: specialites, id: element.id))
                               .toList();
                         }
                       } else {
                         medecins = medecins
                             .where((element) =>
-                                element.nom!
-                                    .toLowerCase()
-                                    .contains(text.toLowerCase()) ||
-                                element.prenom!
-                                    .toLowerCase()
-                                    .contains(text.toLowerCase()))
+                        element.nom!
+                            .toLowerCase()
+                            .contains(text.toLowerCase()) ||
+                            element.prenom!
+                                .toLowerCase()
+                                .contains(text.toLowerCase()))
                             .toList();
                       }
                     });
                   },
-                )),
+                ) : CupertinoSearchTextField(
+                  controller: controller,
+                  onChanged: (text) {
+                    setState(() {
+                      if (text == "") {
+                        if (specialites.length == 0) {
+                          medecins =
+                              list_medecin.entries.map((e) => e.value).toList();
+                        } else {
+                          medecins = list_medecin.entries
+                              .map((e) => e.value)
+                              .toList()
+                              .where((element) => getMedecinOfSpecialite(
+                              list: specialites, id: element.id))
+                              .toList();
+                        }
+                      } else {
+                        medecins = medecins
+                            .where((element) =>
+                        element.nom!
+                            .toLowerCase()
+                            .contains(text.toLowerCase()) ||
+                            element.prenom!
+                                .toLowerCase()
+                                .contains(text.toLowerCase()))
+                            .toList();
+                      }
+                    });
+                  },
+                )
+            ),
             const SizedBox(
               height: 30,
             ),
@@ -179,23 +147,13 @@ class ListMedecinState extends State<ListMedecin> {
                   itemCount: list_specialite.length,
                   itemBuilder: (context, index) {
                     return InkWell(
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 2, left: 30),
-                        padding: const EdgeInsets.all(10),
-                        height: 20,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: list_specialite[index + 1]!.selected!
-                                ? colorWidget
-                                : Colors.grey[400]),
-                        child: Center(
-                          child: Text(list_specialite[index + 1]!.libelle,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: list_specialite[index + 1]!.selected!
-                                      ? Colors.white
-                                      : Colors.black)),
-                        ),
+                      child: libelle(list_specialite[index + 1]!.selected!
+                          ? colorWidget
+                          : Colors.grey[200]!,
+                        list_specialite[index + 1]!.libelle,
+                          list_specialite[index + 1]!.selected!
+                              ? Colors.white
+                              : Colors.black
                       ),
                       onTap: () {
                         setState(() {
@@ -230,9 +188,14 @@ class ListMedecinState extends State<ListMedecin> {
                     );
                   }),
             ),
-            Expanded(
+            const SizedBox(height: 30,),
+            (medecinLoading && specialiteLoading) ?
+            Center(child: Container(
+              margin: EdgeInsets.only(top: 50),
+                child: new CircularProgressIndicator(),
+            )) : Expanded(
               child: GridView.count(
-                  mainAxisSpacing: 20,
+                  mainAxisSpacing: 10,
                   crossAxisCount: 2,
                   children: medecins
                       .map((e) => InkWell(
@@ -248,7 +211,8 @@ class ListMedecinState extends State<ListMedecin> {
                               title: e.type! + " " + e.nom! + " " + e.prenom!,
                               subtitle: getSpecialiteMedecin(id: e.id),
                               size: size,
-                              image: "http://54.38.186.80/front/img/medecins/" + e!.img_1!)))
+                              image: ( e.img_1 != null ) ?
+                                  urlSite+"front/img/medecins/" + e.img_1! : urlSite+"front/img/default.jpg")))
                       .toList()),
             )
           ],

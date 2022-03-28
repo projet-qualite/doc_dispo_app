@@ -12,6 +12,7 @@ import 'package:doc_dispo/common/validations_field.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LogIn extends StatefulWidget {
   LogInState createState() => LogInState();
@@ -23,6 +24,9 @@ class LogInState extends State<LogIn> {
   TextEditingController controllerEmail = TextEditingController();
   TextEditingController controllerMdp = TextEditingController();
   late final _formKey;
+  late SharedPreferences prefs;
+
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -55,7 +59,8 @@ class LogInState extends State<LogIn> {
                       subtitle1: "Vous n'avez pas de compte ? / ",
                       subtitle2: "Créer en un.",
                       context: context,
-                      route: '/signin'),
+                      logo: false,
+                      route: urlSite+'inscription'),
                   const SizedBox(
                     height: 30,
                   ),
@@ -123,47 +128,45 @@ class LogInState extends State<LogIn> {
                             }, number: false, showDate: () {  }, readOnly: false,
 
                         ),
-                        /*const SizedBox(
-                          height: 20,
-                        ),
-                        Row(
-                          children: [
-                            const Text(
-                              "Mot de passe oublié ? / ",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black54),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                Navigator.pushNamed(context, '/reset');
-                              },
-                              child: const Text(
-                                "Réinitialiser",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black),
-                              ),
-                            )
-                          ],
-                        ),*/
+                        header(
+                            width: size.width,
+                            mainTitle: "",
+                            subtitle1: "Mot de passe oublié ? / ",
+                            subtitle2: "Réinitialiser le",
+                            context: context,
+                            logo: false,
+                            route: urlSite+'forgot'),
+
                         const SizedBox(
                           height: 20,
                         ),
                         InkWell(
                             onTap: () {
                               if (_formKey.currentState!.validate()) {
+                                setState(() {
+                                  isLoading = true;
+                                });
                                 switch (default_value) {
                                   case "Un patient":
 
-                                      logPatient(controllerEmail.text,
+                                      logPatient(controllerEmail.text.trim(),
                                           controllerMdp.text).then(
-                                              (value) => {
+                                              (value) async => {
 
-
+                                                setState(() {
+                                                  isLoading = false;
+                                                }),
                                                 if(value.statusCode == 200)
                                                 {
+                                                  prefs = await SharedPreferences.getInstance(),
+
+                                                      prefs.setString('type', "patient"),
+                                                      prefs.setString('email', controllerEmail.text),
+                                                      prefs.setString('mdp', controllerMdp.text),
+
                                                   currentUser = Patient.fromJson(json.decode(value.body)),
+                                                  prefs.setInt('currentUser', currentUser.id),
+
                                                   setState(() {
                                                     selectedIndex = 3;
                                                   }),
@@ -176,6 +179,7 @@ class LogInState extends State<LogIn> {
                                                   ScaffoldMessenger.of(context)
                                                       .showSnackBar(
                                                       const SnackBar(
+                                                        duration: Duration(seconds: 1),
                                                           content: Text(
                                                               'Email ou mot de passe incorrect')),
                                                     )
@@ -184,19 +188,30 @@ class LogInState extends State<LogIn> {
                                               }
                                       );
 
-
-
                                     break;
 
                                   case "Un medecin":
 
 
-                                      logMedecin(controllerEmail.text,
+                                      logMedecin(controllerEmail.text.trim(),
                                           controllerMdp.text).then(
-                                              (value) => {
+                                              (value) async => {
+                                                setState(() {
+                                                  isLoading = false;
+                                                }),
                                                 if(value.statusCode == 200)
                                                   {
+                                                    prefs = await SharedPreferences.getInstance(),
+
+                                                        prefs.setString('type', "medecin"),
+                                                        prefs.setString('email', controllerEmail.text),
+                                                        prefs.setString('mdp', controllerMdp.text),
+
                                                     currentUser = Medecin.fromJson(json.decode(value.body)),
+                                                    prefs.setInt('currentUser', currentUser.id),
+                                                    setState(() {
+                                                      selectedIndex = 3;
+                                                    }),
                                                     Navigator.of(context)
                                                         .pushNamedAndRemoveUntil("/home",
                                                             (Route<dynamic> route) => false)
@@ -224,8 +239,20 @@ class LogInState extends State<LogIn> {
                                 color: const Color.fromRGBO(59, 139, 150, 1),
                               ),
                               padding: const EdgeInsets.all(15),
-                              child: const Center(
-                                child: Text(
+                              child:  Center(
+                                child: (isLoading) ?
+                                Center(
+                                  child: Container(
+                                    height: 20,
+                                    width: 20,
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 3,
+                                      ),
+                                    ),
+                                  ),
+                                ) : const Text(
                                   "Se connecter",
                                   style: TextStyle(
                                       color: Colors.white,

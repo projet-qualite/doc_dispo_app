@@ -6,6 +6,7 @@ import 'package:doc_dispo/classes/proche.dart';
 import 'package:doc_dispo/common/data.dart';
 import 'package:doc_dispo/common/request.dart';
 import 'package:doc_dispo/common/validations_field.dart';
+import 'package:doc_dispo/common/widgets.dart';
 import 'package:doc_dispo/enums/type_field.dart';
 import 'package:doc_dispo/models/champ_formulaire.dart';
 import 'package:doc_dispo/pages/patient/proche/liste_proche.dart';
@@ -24,9 +25,13 @@ class ModifierMdp extends StatefulWidget {
 class ModifierMdpState extends State<ModifierMdp> {
   TextEditingController controllerAMdp = TextEditingController();
   TextEditingController controllerMdp = TextEditingController();
+  TextEditingController controllerCMdp = TextEditingController();
   bool isPassword = true;
+  bool isPassword1 = true;
+  bool isPassword2 = true;
 
   late final _formKey;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -64,7 +69,7 @@ class ModifierMdpState extends State<ModifierMdp> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              "Email",
+                              "Mot de passe",
                               style: TextStyle(
                                   fontSize: 18, fontWeight: FontWeight.bold),
                             ),
@@ -100,15 +105,15 @@ class ModifierMdpState extends State<ModifierMdp> {
                             ),
 
                             FormulaireField(
-                              isPassword: isPassword,
-                              suffix: (isPassword)
+                              isPassword: isPassword1,
+                              suffix: (isPassword1)
                                   ? IconButton(
                                   onPressed: () => setState(
-                                          () => isPassword = !isPassword),
+                                          () => isPassword1 = !isPassword1),
                                   icon: const Icon(Icons.visibility))
                                   : IconButton(
                                   onPressed: () => setState(
-                                          () => isPassword = !isPassword),
+                                          () => isPassword1 = !isPassword1),
                                   icon: const Icon(Icons.visibility_off)),
                               hint: "Nouveau mot de passe",
                               data: Icons.lock,
@@ -122,17 +127,47 @@ class ModifierMdpState extends State<ModifierMdp> {
                               }, number: false, showDate: () {  }, readOnly: false,
                             ),
 
+                            const SizedBox(height: 15,),
+                            FormulaireField(
+                              isPassword: isPassword2,
+                              suffix: (isPassword2)
+                                  ? IconButton(
+                                  onPressed: () => setState(
+                                          () => isPassword2 = !isPassword2),
+                                  icon: const Icon(Icons.visibility))
+                                  : IconButton(
+                                  onPressed: () => setState(
+                                          () => isPassword2 = !isPassword2),
+                                  icon: const Icon(Icons.visibility_off)),
+                              hint: "Confirmer le mot de passe",
+                              data: Icons.lock,
+                              typeField: TypeField.PWD,
+                              controller: controllerCMdp,
+                              validation: (value){
+                                if(value == null || value.isEmpty)
+                                {
+                                  return "Confirmez le mot de passe";
+                                }
+                                return validField(value,TypeField.C_PWD, valueMdp: controllerMdp.text);
+                              }, number: false, showDate: () {  }, readOnly: false,
+                            ),
+
                             const SizedBox(
                               height: 30,
                             ),
                             InkWell(
                                 onTap: () {
                                   if (_formKey.currentState!.validate()) {
+                                    setState(() {
+                                      isLoading = true;
+                                    });
 
                                     if(currentUser is Patient)
                                     {
                                       updatePasswordPatient(controllerAMdp.text, controllerMdp.text,currentUser).then((value) => {
-                                        print(value.statusCode),
+                                        setState(() {
+                                          isLoading = false;
+                                        }),
                                         if(value.statusCode == 200)
                                           {
                                             ScaffoldMessenger.of(context).showSnackBar(
@@ -171,11 +206,14 @@ class ModifierMdpState extends State<ModifierMdp> {
                                     }
                                     else{
                                       updatePasswordMedecin(controllerAMdp.text, controllerMdp.text,currentUser).then((value) => {
+                                        setState(() {
+                                          isLoading = false;
+                                        }),
                                         if(value.statusCode == 200)
                                           {
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               const SnackBar(
-                                                  content: Text('Enregistrer')),
+                                                  content: Text('Enregistré')),
                                             ),
                                             setState(() {
                                               currentUser = Medecin.fromJson(json.decode(value.body));
@@ -219,15 +257,7 @@ class ModifierMdpState extends State<ModifierMdp> {
                                     color: const Color.fromRGBO(59, 139, 150, 1),
                                   ),
                                   padding: const EdgeInsets.all(10),
-                                  child: const Center(
-                                    child: Text(
-                                      "Modifier",
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
+                                  child: buttonRequest(isLoading, "Modifier")
                                 )),
                           ],
                         ),
